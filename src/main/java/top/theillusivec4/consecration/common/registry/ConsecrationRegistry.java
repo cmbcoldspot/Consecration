@@ -48,7 +48,7 @@ public class ConsecrationRegistry {
   private static final DeferredRegister<Potion> POTIONS =
       DeferredRegister.create(ForgeRegistries.POTIONS, ConsecrationApi.MOD_ID);
   private static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
-      DeferredRegister.create(ForgeRegistries.ENTITIES, ConsecrationApi.MOD_ID);
+      DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, ConsecrationApi.MOD_ID);
 
   public static final RegistryObject<MobEffect> HOLY_EFFECT =
       EFFECTS.register(RegistryReference.HOLY,

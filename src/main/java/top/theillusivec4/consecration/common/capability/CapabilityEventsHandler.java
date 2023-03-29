@@ -40,10 +40,10 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilitySerializable;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.event.entity.EntityLeaveWorldEvent;
+import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.event.entity.living.PotionEvent.PotionAddedEvent;
+import net.minecraftforge.event.entity.living.MobEffectEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -68,7 +68,7 @@ public class CapabilityEventsHandler {
   }
 
   @SubscribeEvent(priority = EventPriority.LOWEST)
-  public void invalidateCaps(final EntityLeaveWorldEvent evt) {
+  public void invalidateCaps(final EntityLeaveLevelEvent evt) {
     Entity entity = evt.getEntity();
 
     if (entity instanceof LivingEntity livingEntity) {
@@ -81,8 +81,8 @@ public class CapabilityEventsHandler {
   }
 
   @SubscribeEvent
-  public void livingUpdate(final LivingEvent.LivingUpdateEvent evt) {
-    LivingEntity livingEntity = evt.getEntityLiving();
+  public void livingUpdate(final LivingEvent.LivingTickEvent evt) {
+    LivingEntity livingEntity = evt.getEntity();
 
     if (!livingEntity.getLevel().isClientSide()) {
 
@@ -104,10 +104,10 @@ public class CapabilityEventsHandler {
             double speedMod = ConsecrationConfig.speedModifier;
 
             if (speedMod > 0 && speedAttribute != null &&
-                speedAttribute.getModifier(SPEED_MOD) == null) {
+                    speedAttribute.getModifier(SPEED_MOD) == null) {
               speedAttribute.addTransientModifier(
-                  new AttributeModifier(SPEED_MOD, "Undead speed", speedMod,
-                      Operation.MULTIPLY_TOTAL));
+                      new AttributeModifier(SPEED_MOD, "Undead speed", speedMod,
+                              Operation.MULTIPLY_TOTAL));
             }
           }
         });
@@ -117,11 +117,11 @@ public class CapabilityEventsHandler {
 
         if (undying.isVulnerable()) {
           livingEntity.getLevel().addParticle(ParticleTypes.INSTANT_EFFECT,
-              livingEntity.position().x + (livingEntity.getRandom().nextDouble() - 0.5D) *
-                  (double) livingEntity.getBbWidth(), livingEntity.position().y +
-                  livingEntity.getRandom().nextDouble() * livingEntity.getBbHeight(),
-              livingEntity.position().z + (livingEntity.getRandom().nextDouble() - 0.5D) *
-                  (double) livingEntity.getBbWidth(), 0.0D, 0.0D, 0.0D);
+                  livingEntity.position().x + (livingEntity.getRandom().nextDouble() - 0.5D) *
+                          (double) livingEntity.getBbWidth(), livingEntity.position().y +
+                          livingEntity.getRandom().nextDouble() * livingEntity.getBbHeight(),
+                  livingEntity.position().z + (livingEntity.getRandom().nextDouble() - 0.5D) *
+                          (double) livingEntity.getBbWidth(), 0.0D, 0.0D, 0.0D);
         }
 
         if (livingEntity.tickCount % 20 == 0) {
@@ -132,17 +132,19 @@ public class CapabilityEventsHandler {
   }
 
   @SubscribeEvent
-  public void potionAdded(final PotionAddedEvent evt) {
-    LivingEntity livingEntity = evt.getEntityLiving();
+  public void effectAdded(final MobEffectEvent.Expired evt) {
+    LivingEntity livingEntity = evt.getEntity();
 
     if (!livingEntity.getLevel().isClientSide()) {
       ConsecrationApi.getInstance().getUndying(livingEntity).ifPresent(undying -> {
-        MobEffectInstance effectInstance = evt.getPotionEffect();
+        MobEffectInstance effectInstance = evt.getEffectInstance();
         MobEffect effect = effectInstance.getEffect();
 
+        if(effect == null)
+          return;
+
         if (ConsecrationApi.getInstance().isHolyEffect(effect)) {
-          int duration =
-              effect.isInstantenous() ? ConsecrationConfig.holyVulnerableDuration :
+          int duration = effect.isInstantenous() ? ConsecrationConfig.holyVulnerableDuration :
                   effectInstance.getDuration();
           undying.setVulnerableDuration(duration);
         }
@@ -154,31 +156,31 @@ public class CapabilityEventsHandler {
   public void startTracking(final PlayerEvent.StartTracking evt) {
 
     if (evt.getTarget() instanceof LivingEntity livingEntity &&
-        !livingEntity.getLevel().isClientSide()) {
+            !livingEntity.getLevel().isClientSide()) {
       ConsecrationApi.getInstance().getUndying(livingEntity).ifPresent(
-          undying -> ConsecrationNetwork.syncVulnerability(livingEntity,
-              undying.getVulnerableDuration()));
+              undying -> ConsecrationNetwork.syncVulnerability(livingEntity,
+                      undying.getVulnerableDuration()));
     }
   }
 
   @SubscribeEvent
   public void livingDamage(final LivingDamageEvent evt) {
-    LivingEntity livingEntity = evt.getEntityLiving();
+    LivingEntity livingEntity = evt.getEntity();
 
     if (!livingEntity.getLevel().isClientSide()) {
       LazyOptional<IUndying> hurtUndying = ConsecrationApi.getInstance().getUndying(livingEntity);
 
       if (!hurtUndying.isPresent() &&
-          evt.getSource().getDirectEntity() instanceof LivingEntity attacker) {
+              evt.getSource().getDirectEntity() instanceof LivingEntity attacker) {
         LazyOptional<IUndying> attackerUndying = ConsecrationApi.getInstance().getUndying(attacker);
 
         attackerUndying.ifPresent(undying -> {
           int level =
-              ConsecrationApi.getInstance()
-                  .getHolyProtectionLevel(attacker, livingEntity, evt.getSource());
+                  ConsecrationApi.getInstance()
+                          .getHolyProtectionLevel(attacker, livingEntity, evt.getSource());
 
           if (level > 0 &&
-              livingEntity.getLevel().getRandom().nextFloat() < 0.15F * (float) level) {
+                  livingEntity.getLevel().getRandom().nextFloat() < 0.15F * (float) level) {
             undying.setVulnerableDuration(ConsecrationConfig.holyVulnerableDuration);
           }
         });
@@ -188,7 +190,7 @@ public class CapabilityEventsHandler {
         DamageSource source = evt.getSource();
 
         if (source == DamageSource.OUT_OF_WORLD || source == DamageSource.CRAMMING
-            || source == DamageSource.IN_WALL) {
+                || source == DamageSource.IN_WALL) {
           return;
         }
         VulnerabilityType type = UndyingCapability.createVulnerability(livingEntity, source);
@@ -211,9 +213,10 @@ public class CapabilityEventsHandler {
 
             if (trueSource instanceof Player) {
               evt.setAmount(evt.getAmount() * (float) (1 - ConsecrationConfig.damageReduction));
-            } else if (trueSource instanceof LivingEntity) {
+            }
+            else if (trueSource instanceof LivingEntity) {
               evt.setAmount(
-                  evt.getAmount() * (float) (1 - ConsecrationConfig.damageReductionVsMobs));
+                      evt.getAmount() * (float) (1 - ConsecrationConfig.damageReductionVsMobs));
             }
           }
         }

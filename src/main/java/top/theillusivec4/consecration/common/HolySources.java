@@ -44,7 +44,7 @@ public class HolySources {
       Objects.requireNonNull(ForgeRegistries.ENCHANTMENTS.tags())
           .createOptionalTagKey(HOLY, new HashSet<>());
   private static final TagKey<EntityType<?>> HOLY_ENTITIES =
-      Objects.requireNonNull(ForgeRegistries.ENTITIES.tags())
+      Objects.requireNonNull(ForgeRegistries.ENTITY_TYPES.tags())
           .createOptionalTagKey(HOLY, new HashSet<>());
 
   private static final List<BiFunction<LivingEntity, DamageSource, Boolean>> HOLY_ATTACKS =
@@ -114,7 +114,7 @@ public class HolySources {
         return true;
       }
     }
-    return Objects.requireNonNull(ForgeRegistries.ENTITIES.tags()).getTag(HOLY_ENTITIES)
+    return Objects.requireNonNull(ForgeRegistries.ENTITY_TYPES.tags()).getTag(HOLY_ENTITIES)
         .contains(entity.getType());
   }
 
@@ -138,7 +138,7 @@ public class HolySources {
           if (ing != null) {
 
             for (ItemStack mat : ing.getItems()) {
-              ResourceLocation resourceLocation = mat.getItem().getRegistryName();
+              ResourceLocation resourceLocation = new ResourceLocation(mat.getItem().getDescriptionId());
 
               if (resourceLocation != null && (ConsecrationApi.getInstance()
                   .isHolyMaterial(resourceLocation.toString()) || ConsecrationApi.getInstance()

@@ -59,7 +59,6 @@ import top.theillusivec4.consecration.common.capability.CapabilityEventsHandler;
 import top.theillusivec4.consecration.common.impl.ConsecrationApiImpl;
 import top.theillusivec4.consecration.common.integration.AbstractCompatibilityModule;
 import top.theillusivec4.consecration.common.integration.SilentGearModule;
-import top.theillusivec4.consecration.common.integration.TConstructModule;
 import top.theillusivec4.consecration.common.integration.TetraModule;
 import top.theillusivec4.consecration.common.integration.WerewolvesModule;
 import top.theillusivec4.consecration.common.network.ConsecrationNetwork;
@@ -77,7 +76,6 @@ public class Consecration {
 
   static {
     MODULES.put("tetra", TetraModule.class);
-    MODULES.put("tconstruct", TConstructModule.class);
     MODULES.put("werewolves", WerewolvesModule.class);
     MODULES.put("silentgear", SilentGearModule.class);
   }
@@ -158,7 +156,7 @@ public class Consecration {
     ItemStack stack = evt.getItemStack();
 
     if (stack.getItem() == Items.ARROW) {
-      Player player = evt.getPlayer();
+      Player player = evt.getEntity();
       Block block = player.getCommandSenderWorld().getBlockState(evt.getPos()).getBlock();
 
       if (block == Blocks.CAMPFIRE || block == Blocks.SOUL_CAMPFIRE) {

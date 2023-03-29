@@ -102,7 +102,7 @@ public class UndyingCapability {
         Tier tier = tieredItem.getTier();
 
         for (ItemStack mat : tier.getRepairIngredient().getItems()) {
-          ResourceLocation resourceLocation = mat.getItem().getRegistryName();
+          ResourceLocation resourceLocation = new ResourceLocation(mat.getItem().getDescriptionId());
 
           if (resourceLocation != null &&
               (ConsecrationApi.getInstance().isHolyMaterial(resourceLocation.toString()) ||
